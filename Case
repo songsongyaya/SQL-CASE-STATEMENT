@@ -1,1 +1,31 @@
+---- use adventure works database, compare the 2013 and 2014 total US salles performance by shipping to zip code. 
+---- End result should be zip code, 2013 sale, 2014 sale and pct of change from 2013 to 2014.
 
+----SOLUTION
+select A.PostalCode,
+       A.sale_2013,
+	   A.sale_2014,
+	   case when A.sale_2013=0 then null
+	        else (A.sale_2014 -A.sale_2013 )*100/A.sale_2013 
+	   end as pct     
+from
+(
+select ADDR.PostalCode,
+       sum(case when YEAR(OrderDate)=2013 then subtotal 
+	            else 0 end) as sale_2013,
+	   sum(case when YEAR(OrderDate)=2014 then subtotal
+	            else 0 end) as sale_2014
+from Sales.SalesOrderHeader OH
+     inner join
+	 Person.Address ADDR
+	 on OH.ShipToAddressID =ADDR.AddressID 
+	 inner join
+	 person.StateProvince SP
+	 on ADDR.StateProvinceID=SP.StateProvinceID 
+	 where SP.StateProvinceCode='US' and
+	       YEAR(OrderDate) in (2013,2014)
+	 group by ADDR.PostalCode  
+)A
+order by A.PostalCode 
+;
+     
